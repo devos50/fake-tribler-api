@@ -42,6 +42,8 @@ class DownloadEndpoint(resource.Resource):
         resource.Resource.__init__(self)
         self.infohash = infohash
 
+        self.putChild("files", DownloadFilesEndpoint(self.infohash))
+
     def render_PATCH(self, request):
         download = tribler_utils.tribler_data.get_download_with_infohash(self.infohash)
         parameters = http.parse_qs(request.content.read(), 1)
@@ -65,16 +67,12 @@ class DownloadEndpoint(resource.Resource):
         return json.dumps({"modified": True})
 
 
-class DownloadBaseEndpoint(resource.Resource):
+class DownloadFilesEndpoint(resource.Resource):
 
     def __init__(self, infohash):
         resource.Resource.__init__(self)
         self.infohash = infohash
 
-    @staticmethod
-    def return_404(request, message="the download with given infohash does not exist"):
-        """
-        Returns a 404 response code if your channel has not been created.
-        """
-        request.setResponseCode(http.NOT_FOUND)
-        return json.dumps({"error": message})
+    def render_GET(self, request):
+        download = tribler_utils.tribler_data.get_download_with_infohash(self.infohash)
+        return json.dumps({"files": download.files})

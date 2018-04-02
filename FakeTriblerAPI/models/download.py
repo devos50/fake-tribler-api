@@ -38,9 +38,19 @@ class Download:
             self.peers.append(DownloadPeer())
 
         # Generate some files
-        for file_ind in xrange(randint(1, 10)):
-            self.files.append({"name": "File %d" % file_ind, "size": randint(1000, 10000000),
+        c = 0
+        for file in torrent.files:
+            self.files.append({"name": file["path"], "index": c, "size": file["length"],
                                "progress": random(), "included": True if random() > 0.5 else False})
+            c += 1
+
+        if not self.files:
+            for file_ind in xrange(randint(1, 10)):
+                self.files.append({"name": "File %d.avi" % file_ind, "index": file_ind, "size": randint(1000, 1000000),
+                                   "progress": random(), "included": True if random() > 0.5 else False})
+
+        # Add at least one media file
+        self.files.append({"name": "media.avi", "index": len(self.files), "size": 100000, "progress": 0.5, "included": True})
 
     def get_pieces_base64(self):
         bitstr = ""

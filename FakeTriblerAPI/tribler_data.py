@@ -1,6 +1,6 @@
 import base64
 import os
-from random import randint, sample
+from random import randint, sample, choice
 from time import time
 
 import FakeTriblerAPI
@@ -175,12 +175,13 @@ class TriblerData:
                 return download
 
     def start_random_download(self):
-        random_torrent = sample(self.torrents, 1)[0]
+        random_torrent = choice(self.torrents)
         self.downloads.append(Download(random_torrent))
 
     def generate_downloads(self):
-        for _ in xrange(randint(10, 30)):
-            self.start_random_download()
+        random_torrents = sample(self.torrents, min(randint(10, 30), len(self.torrents)))
+        for torrent in random_torrents:
+            self.downloads.append(Download(torrent))
 
     def generate_trustchain_blocks(self):
         # Generate a chain of 100 blocks
