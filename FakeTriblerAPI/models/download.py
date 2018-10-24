@@ -15,6 +15,8 @@ class Download:
         self.safe_seeding = True if randint(0, 1) == 0 else False
         self.num_peers = randint(0, 1000)
         self.seeds = randint(0, 1000)
+        self.num_connected_peers = randint(0, 100)
+        self.num_connected_seeds = randint(0, 100)
         self.progress = uniform(0, 1)
         self.down_speed = randint(0, 1000000)
         self.up_speed = randint(0, 1000000)
@@ -60,7 +62,8 @@ class Download:
                     "destination": self.destination, "availability": self.availability,
                     "total_pieces": self.total_pieces, "total_up": self.total_up, "total_down": self.total_down,
                     "ratio": self.ratio, "error": "unknown", "time_added": self.time_added, "vod_mode": False,
-                    "vod_prebuffering_progress_consec": 0.34, "credit_mining": False}
+                    "vod_prebuffering_progress_consec": 0.34, "credit_mining": False,
+                    "num_connected_peers": self.num_connected_peers, "num_connected_seeds": self.num_connected_seeds}
 
         if get_peers:
             download["peers"] = [peer.get_info_dict() for peer in self.peers]
