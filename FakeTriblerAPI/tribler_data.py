@@ -1,13 +1,12 @@
 import os
-from random import randint, sample, choice
+from random import randint, sample
 from time import time
 
-import FakeTriblerAPI
+from FakeTriblerAPI.constants import NEW, TODELETE
 from FakeTriblerAPI.models.trustchain_block import TrustchainBlock
 from FakeTriblerAPI.models.order import Order
 from FakeTriblerAPI.models.tick import Tick
 from FakeTriblerAPI.models.transaction import Transaction
-from FakeTriblerAPI.utils import get_random_filename, get_random_hex_string
 from FakeTriblerAPI.utils.network import get_random_port
 from models.channel import Channel
 from models.download import Download
@@ -26,7 +25,6 @@ class TriblerData:
         self.subscribed_channels = set()
         self.downloads = []
         self.my_channel = -1
-        self.rss_feeds = []
         self.settings = {}
         self.trustchain_blocks = []
         self.order_book = {}
@@ -40,7 +38,6 @@ class TriblerData:
         self.generate_channels()
         self.assign_subscribed_channels()
         self.generate_downloads()
-        self.generate_rss_feeds()
         self.generate_trustchain_blocks()
         self.generate_order_book()
         self.generate_transactions()
@@ -84,9 +81,6 @@ class TriblerData:
                     "anonymity_enabled": True,
                     "safeseeding_enabled": True,
                 },
-                "dispersy": {
-                    "enabled": True,
-                },
                 "ipv8": {
                     "enabled": True,
                     "use_testnet": False,
@@ -119,6 +113,45 @@ class TriblerData:
             }
         }
 
+    def get_channels(self, first=1, last=50, sort_by=None, sort_asc=True, filter=None, subscribed=False):
+        """
+        Return channels, based on various parameters.
+        """
+        filter = filter.lower() if filter else None
+        results = self.channels if not subscribed else [self.channels[index] for index in self.subscribed_channels]
+        results = [result.get_json() for result in results]
+
+        # Filter on search term
+        if filter:
+            results = [result for result in results if filter in result['name'].lower()]
+
+        # Sort accordingly
+        if sort_by:
+            results.sort(key=lambda result: result[sort_by], reverse=not sort_asc)
+
+        return results[first-1:last], len(results)
+
+    def get_torrents(self, first=1, last=50, sort_by=None, sort_asc=True, filter=None, channel_pk=None, include_status=False):
+        """
+        Return torrents, based on various parameters.
+        """
+        if channel_pk and not self.get_channel_with_public_key(channel_pk):
+            return [], 0
+
+        filter = filter.lower() if filter else None
+        results = self.torrents if not channel_pk else self.get_channel_with_public_key(channel_pk).torrents
+        results = [result.get_json(include_status=include_status) for result in results]
+
+        # Filter on search term
+        if filter:
+            results = [result for result in results if filter in result['name'].lower()]
+
+        # Sort accordingly
+        if sort_by:
+            results.sort(key=lambda result: result[sort_by], reverse=not sort_asc)
+
+        return results[first-1:last], len(results)
+
     # Generate channels from the random_channels file
     def generate_channels(self):
         num_channels = randint(100, 200)
@@ -128,10 +161,18 @@ class TriblerData:
         if CREATE_MY_CHANNEL:
             # Pick one of these channels as your channel
             self.my_channel = randint(0, len(self.channels) - 1)
+            channel_obj = self.channels[self.my_channel]
+            new_torrents = sample(channel_obj.torrents, min(len(channel_obj.torrents), 10))
+            for torrent in new_torrents:
+                torrent.status = NEW
+
+            delete_torrents = sample(channel_obj.torrents, min(len(channel_obj.torrents), 10))
+            for torrent in delete_torrents:
+                torrent.status = TODELETE
 
     def assign_subscribed_channels(self):
         # Make between 10 and 50 channels subscribed channels
-        num_subscribed = randint(10, 50)
+        num_subscribed = randint(10, 20)
         for i in range(0, num_subscribed):
             channel_index = randint(0, len(self.channels) - 1)
             self.subscribed_channels.add(channel_index)
@@ -140,28 +181,16 @@ class TriblerData:
     def generate_torrents(self):
         # Create random torrents in channels
         for _ in xrange(1000):
-            infohash = get_random_hex_string(40).decode('hex')
-            name = get_random_filename()
-            categories = ['document', 'audio', 'video', 'xxx']
-            torrent = Torrent(infohash, name, randint(1024, 1024 * 3000), choice(categories))
-
-            # Create the files
-            for _ in xrange(randint(1, 20)):
-                torrent.files.append({"path": get_random_filename(), "length": randint(1024, 1024 * 3000)})
-            self.torrents.append(torrent)
-
-    def generate_rss_feeds(self):
-        for i in range(randint(10, 30)):
-            self.rss_feeds.append('http://test%d.com/feed.xml' % i)
+            self.torrents.append(Torrent.random())
 
     def get_channel_with_id(self, id):
         for channel in self.channels:
             if str(channel.id) == id:
                 return channel
 
-    def get_channel_with_cid(self, cid):
+    def get_channel_with_public_key(self, public_key):
         for channel in self.channels:
-            if str(channel.cid) == cid:
+            if str(channel.public_key) == public_key:
                 return channel
 
     def get_my_channel(self):

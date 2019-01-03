@@ -19,3 +19,12 @@ DLSTATUS_STRINGS = ['DLSTATUS_ALLOCATING_DISKSPACE',
                     'DLSTATUS_STOPPED_ON_ERROR',
                     'DLSTATUS_METADATA',
                     'DLSTATUS_CIRCUITS']
+
+
+# Metadata, torrents and channel statuses
+NEW = 0
+TODELETE = 1
+COMMITTED = 2
+JUST_RECEIVED = 3
+UPDATE_AVAILABLE = 4
+PREVIEW_UPDATE_AVAILABLE = 5

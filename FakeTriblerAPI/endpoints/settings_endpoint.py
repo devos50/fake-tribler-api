@@ -14,4 +14,4 @@ class SettingsEndpoint(resource.Resource):
 
     # Do nothing when we are saving the settings
     def render_PUT(self, request):
-        return json.dumps({"saved": True})
+        return json.dumps({"modified": True})
