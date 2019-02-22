@@ -13,5 +13,5 @@ class SettingsEndpoint(resource.Resource):
         return json.dumps(tribler_utils.tribler_data.settings)
 
     # Do nothing when we are saving the settings
-    def render_PUT(self, request):
+    def render_POST(self, request):
         return json.dumps({"modified": True})
